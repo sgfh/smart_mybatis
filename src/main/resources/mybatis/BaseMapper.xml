@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.smart.mybatis.mapper.BaseMapper">
+    <insert id="insert" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        INSERT INTO ${TABLE_NAME} (
+        <foreach collection="COLUMNS" item="item" index="index" separator=",">
+            ${item}
+        </foreach>
+        ) VALUES (
+        <foreach collection="VALUES" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </insert>
+
+    <select id="findById" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT * FROM ${TABLE_NAME} WHERE ${KEY_ID} = #{KEY_VALUE}
+    </select>
+
+    <select id="find" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT * FROM ${TABLE_NAME} WHERE 1=1
+        <foreach collection="DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+    </select>
+
+    <select id="list" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT * FROM ${TABLE_NAME} WHERE 1=1
+        <foreach collection="DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        <if test="_parameter.containsKey('SQL')">
+             ${SQL}
+        </if>
+        <if test="_parameter.containsKey('SORT_PARAM')">
+            ORDER BY ${SORT_PARAM}
+        </if>
+        <if test="_parameter.containsKey('SORT_VALUE')">
+             ${SORT_VALUE}
+        </if>
+    </select>
+
+    <select id="count" parameterType="java.util.HashMap" resultType="INTEGER">
+        SELECT count(*) FROM ${TABLE_NAME} WHERE 1=1
+        <foreach collection="DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        <if test="_parameter.containsKey('SQL')">
+            ${SQL}
+        </if>
+        <if test="_parameter.containsKey('SORT_PARAM')">
+            ORDER BY ${SORT_PARAM}
+        </if>
+        <if test="_parameter.containsKey('SORT_VALUE')">
+            ${SORT_VALUE}
+        </if>
+    </select>
+
+    <update id="update" parameterType="java.util.HashMap">
+        UPDATE ${TABLE_NAME} SET
+        <foreach collection="DATA" item="item" index="index" separator=",">
+            ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        WHERE ${KEY_ID} = #{KEY_VALUE}
+    </update>
+
+    <delete id="delete" parameterType="java.util.HashMap">
+        DELETE FROM ${TABLE_NAME} WHERE ${KEY_ID} = #{KEY_VALUE}
+    </delete>
+
+    <select id="findLinkT" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT <include refid="linkTColumns"/> FROM ${MAIN_TABLE}
+        <foreach collection="DATA" item="item" index="index" separator="">
+            LEFT JOIN
+            ${item.TABLE_NAME}
+            ON
+            ${MAIN_TABLE}.${item.ON_FIELD}=${item.TABLE_NAME}.id
+        </foreach>
+        WHERE 1=1
+        <if test="_parameter.containsKey('KEY_ID')">
+            AND ${KEY_ID}=${KEY_VALUE}
+        </if>
+        <foreach collection="QUERY_DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        <if test="_parameter.containsKey('SQL')">
+            ${SQL}
+        </if>
+    </select>
+
+    <select id="findLinkListT" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT <include refid="linkTColumns"/> FROM ${MAIN_TABLE}
+        <foreach collection="DATA" item="item" index="index" separator="">
+            LEFT JOIN
+            ${item.TABLE_NAME}
+            ON
+            ${MAIN_TABLE}.${item.ON_FIELD}=${item.TABLE_NAME}.id
+        </foreach>
+        WHERE 1=1
+        <if test="_parameter.containsKey('KEY_ID')">
+            AND ${KEY_ID}=${KEY_VALUE}
+        </if>
+        <foreach collection="QUERY_DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        <if test="_parameter.containsKey('SQL')">
+            ${SQL}
+        </if>
+    </select>
+
+    <select id="findOrderLinkT" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT <include refid="linkTColumns"/> FROM ${MAIN_TABLE}
+        <foreach collection="DATA" item="item" index="index" separator="">
+            LEFT JOIN
+            ${item.TABLE_NAME}
+            ON
+            ${MAIN_TABLE}.${item.ON_FIELD}=${item.TABLE_NAME}.id
+        </foreach>
+        WHERE 1=1
+        <if test="_parameter.containsKey('KEY_ID')">
+            AND ${KEY_ID}=${KEY_VALUE}
+        </if>
+        <foreach collection="QUERY_DATA" item="item" index="index" separator="">
+            AND ${item.COLUMN} = #{item.COL_VALUE}
+        </foreach>
+        <if test="_parameter.containsKey('LIKES')">
+            AND(
+        <foreach collection="LIKES" item="item" index="index"  separator=" OR " close="  ">
+            ${item.property} LIKE CONCAT('%',${item.value},'%')
+        </foreach>
+          )
+        </if>
+        <if test="_parameter.containsKey('SQL')">
+            ${SQL}
+        </if>
+        <if test="_parameter.containsKey('GROUPBYS')">
+            <foreach collection="GROUPBYS" item="item" open="GROUP BY " separator="," close="  ">
+                ${item.property}
+            </foreach>
+        </if>
+        <if test="_parameter.containsKey('ORDERS')">
+            <foreach collection="ORDERS" item="item" open="ORDER BY " separator="," close="  ">
+                ${item.property} ${item.direction}
+            </foreach>
+        </if>
+    </select>
+    <sql id="linkTColumns">
+        ${SCAN_FIELDS}
+    </sql>
+</mapper>
