@@ -10,6 +10,7 @@ import com.smart.mybatis.page.Pageable;
 import com.smart.mybatis.pojo.GroupBy;
 import com.smart.mybatis.pojo.Like;
 import com.smart.mybatis.pojo.OrderBy;
+import com.smart.mybatis.pojo.Query;
 import com.smart.mybatis.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
 
     @Override
     public int insert(T entity) {
-        Map<String, Object> param = transformObj(entity, TableConstants.INSERT, null, null, null);
+        Map<String, Object> param = transformObj(entity, TableConstants.INSERT, null, null, null,null);
         if (null == param)
             return 0;
         int num = baseMapper.insert(param);
@@ -42,12 +43,12 @@ public class BaseServiceImpl<T> implements BaseService<T> {
 
     @Override
     public int update(T entity) {
-        return baseMapper.update(transformObj(entity, UPDATE, null, null, null));
+        return baseMapper.update(transformObj(entity, UPDATE, null, null, null,null));
     }
 
     @Override
     public int delete(T entity) {
-        return baseMapper.delete(transformObj(entity, TableConstants.COMMON, null, null, null));
+        return baseMapper.delete(transformObj(entity, TableConstants.COMMON, null, null, null,null));
     }
 
     @Override
@@ -65,29 +66,44 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         }
         if (null == entity)
             return null;
-        return doR(entity, baseMapper.findById(transformObj(entity, TableConstants.COMMON, null, null, null)));
+        return doR(entity, baseMapper.findById(transformObj(entity, TableConstants.COMMON, null, null, null,null)));
     }
 
     @Override
     public List<T> list(T entity, Class<T> cls) {
         //return map2List(entity, baseMapper.list(transformObj(entity, "common")), cls);
-        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null)), cls);
+        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null,null)), cls);
     }
 
     @Override
     public Object find(T entity) {
         //return doR(entity, baseMapper.find(transformObj(entity, "common")));
-        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null)));
+        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null,null)));
     }
 
     @Override
     public Object findLinkT(T entity) {
-        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null)));
+        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null,null)));
     }
 
     @Override
     public List<T> findLinkListT(T entity, Class<T> cls) {
-        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null)), cls);
+        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList) {
+        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null,queryList)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes,queryList)), cls);
     }
 
     @Override
@@ -118,12 +134,12 @@ public class BaseServiceImpl<T> implements BaseService<T> {
 
     @Override
     public List<T> findOrderLinkT(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
-        return map2LinkList(baseMapper.findOrderLinkT(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes)), cls);
+        return map2LinkList(baseMapper.findOrderLinkT(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes,null)), cls);
     }
 
     @Override
     public Integer count(T entity, Class<T> cls) {
-        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null));
+        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null,null));
         return num == null ? 0 : num;
     }
 
@@ -182,7 +198,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     /**
      * 扫描类属性，注入查询值
      */
-    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes,List<Query> queryList) {
         //获取表名
         if (null == t.getClass().getAnnotation(Table.class))
             return null;
@@ -311,12 +327,14 @@ public class BaseServiceImpl<T> implements BaseService<T> {
             re.put(TableConstants.DATA, data);
             re.put(TableConstants.QUERY_DATA, queryData);
             re.put(TableConstants.SCAN_FIELDS, stringBuilder.toString());
-            if (null != orderList)
+            if (null != orderList&&orderList.size()>0)
                 re.put("ORDERS", orderList);
-            if (null != groupByList)
+            if (null != groupByList&&groupByList.size()>0)
                 re.put("GROUPBYS", groupByList);
-            if (null != likes)
+            if (null != likes&&likes.size()>0)
                 re.put("LIKES", likes);
+            if (null != queryList&&queryList.size()>0)
+                re.put("QUERY", queryList);
         }
         return re;
     }
@@ -444,7 +462,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                             setFieldValueByFieldName(f.getName(), newClass, id);
 
                     }
-                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null));
+                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null,null));
                     List<Object> objectList = parseList(mapList, newClass);
                     setFieldValueByFieldName(field.getName(), obj, objectList);
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -516,7 +534,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                             setFieldValueByFieldName(f.getName(), newClass, id);
 
                     }
-                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null));
+                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null,null));
                     List<Object> objectList = parseList(mapList, newClass);
                     setFieldValueByFieldName(field.getName(), obj, objectList);
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {

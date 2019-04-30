@@ -1,13 +1,12 @@
 package com.smart.mybatis.pojo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * 条件like
- */
-public class Like {
+/**查询条件，主要用于副表条件限定*/
+public class Query implements Serializable {
     /**
      * 属性
      */
@@ -16,12 +15,12 @@ public class Like {
     /**值*/
     private Object value;
 
-    public Like(String property,Object value){
+    public Query(String property,Object value){
         this.property=property;
-        this.value="'"+value+"'";
+        this.value=value;
     }
 
-    public static List<Like> callList(Like... likes){
+    public static List<Query> callList(Query... likes){
         return new ArrayList<>(Arrays.asList(likes));
     }
 

@@ -32,9 +32,13 @@
         <foreach collection="DATA" item="item" index="index" separator="">
             AND ${item.COLUMN} = #{item.COL_VALUE}
         </foreach>
+        <foreach collection="QUERY" item="item" index="index" separator="">
+            AND ${item.property} = #{item.value}
+        </foreach>
         <if test="_parameter.containsKey('SQL')">
              ${SQL}
         </if>
+
         <if test="_parameter.containsKey('SORT_PARAM')">
             ORDER BY ${SORT_PARAM}
         </if>
@@ -106,8 +110,28 @@
         <foreach collection="QUERY_DATA" item="item" index="index" separator="">
             AND ${item.COLUMN} = #{item.COL_VALUE}
         </foreach>
+        <foreach collection="QUERY" item="item" index="index" separator="">
+            AND ${item.property} = #{item.value}
+        </foreach>
         <if test="_parameter.containsKey('SQL')">
             ${SQL}
+        </if>
+        <if test="_parameter.containsKey('LIKES')">
+            AND(
+            <foreach collection="LIKES" item="item" index="index"  separator=" OR " close="  ">
+                ${item.property} LIKE CONCAT('%',${item.value},'%')
+            </foreach>
+            )
+        </if>
+        <if test="_parameter.containsKey('GROUPBYS')">
+            <foreach collection="GROUPBYS" item="item" open="GROUP BY " separator="," close="  ">
+                ${item.property}
+            </foreach>
+        </if>
+        <if test="_parameter.containsKey('ORDERS')">
+            <foreach collection="ORDERS" item="item" open="ORDER BY " separator="," close="  ">
+                ${item.property} ${item.direction}
+            </foreach>
         </if>
     </select>
 

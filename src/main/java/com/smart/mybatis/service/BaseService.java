@@ -1,12 +1,12 @@
 package com.smart.mybatis.service;
 
 
-
 import com.github.pagehelper.PageInfo;
 import com.smart.mybatis.page.Pageable;
 import com.smart.mybatis.pojo.GroupBy;
 import com.smart.mybatis.pojo.Like;
 import com.smart.mybatis.pojo.OrderBy;
+import com.smart.mybatis.pojo.Query;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +23,12 @@ public interface BaseService<T> {
 
     List<T> list(T entity, Class<T> cls);
 
+    List<T> list(T entity, Class<T> cls, List<Query> queryList);
+
+    List<T> list(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+
+    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+
     Object find(T entity);
 
     Object findLinkT(T entity);
@@ -31,11 +37,12 @@ public interface BaseService<T> {
 
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls);
 
-
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
     List<T> findOrderLinkT(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
-    /**count*/
+    /**
+     * count
+     */
     Integer count(T entity, Class<T> cls);
 }
