@@ -21,13 +21,6 @@ public interface BaseMapper {
 
     HashMap<String,Object> find(Map<String, Object> params);
 
-    HashMap<String,Object> findLinkT(Map<String, Object> params);
-
-    List<Map<String,Object>> findLinkListT(Map<String, Object> params);
-
-    //带有排序
-    List<Map<String,Object>> findOrderLinkT(Map<String, Object> params);
-
     /**count*/
     Integer count(Map<String, Object> params);
 }

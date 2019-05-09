@@ -1,7 +1,6 @@
 package com.smart.mybatis.pojo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -13,16 +12,26 @@ public class Like {
      */
     private String property;
 
-    /**值*/
+    /**
+     * 值
+     */
     private Object value;
 
-    public Like(String property,Object value){
-        this.property=property;
-        this.value="'"+value+"'";
+    public Like(String property, Object value) {
+        this.property = property;
+        if (value == null)
+            this.value = "";
+        else
+            this.value = "'" + value + "'";
     }
 
-    public static List<Like> callList(Like... likes){
-        return new ArrayList<>(Arrays.asList(likes));
+    public static List<Like> callList(Like... likes) {
+        List<Like> list = new ArrayList<>();
+        for (Like like : likes) {
+            if (!"".equals(like.getValue()))
+                list.add(like);
+        }
+        return list;
     }
 
     public String getProperty() {
