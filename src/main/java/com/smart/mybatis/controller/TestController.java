@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Date;
 import java.util.List;
 
+@SuppressWarnings("all")
 @RestController
 @RequestMapping("/test")
 public class TestController {
@@ -43,7 +45,27 @@ public class TestController {
     }
 
     /**
+     * 更新学生
+     *
+     * @param id:学生id
+     * @param name:姓名
+     */
+    @GetMapping(value = "/update")
+    public BaseVo<Student> update(Student student) {
+        BaseVo<Student> baseVo = new BaseVo<>();
+        if (null == student.getId()) {
+            baseVo.setCode(BaseVo.CODE_ERR);
+            return baseVo;
+        }
+        student.setModifyDate(new Date());
+        studentService.update(student);
+        return baseVo;
+    }
+
+    /**
      * 新增老师
+     *
+     * @param name:姓名
      */
     @GetMapping(value = "/teacher/add")
     public BaseVo<Teacher> teacherAdd(Teacher teacher) {
