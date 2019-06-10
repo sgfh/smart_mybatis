@@ -1,5 +1,6 @@
 package com.smart.mybatis.service.impl;
 
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.smart.mybatis.annotation.*;
@@ -7,9 +8,8 @@ import com.smart.mybatis.database.TableConstants;
 import com.smart.mybatis.mapper.BaseMapper;
 import com.smart.mybatis.page.PageBean;
 import com.smart.mybatis.page.Pageable;
-import com.smart.mybatis.pojo.GroupBy;
-import com.smart.mybatis.pojo.Like;
-import com.smart.mybatis.pojo.OrderBy;
+import com.smart.mybatis.pojo.*;
+import com.smart.mybatis.pojo.Query;
 import com.smart.mybatis.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.lang.reflect.*;
 import java.util.*;
 
-import static com.smart.mybatis.database.TableConstants.UPDATE;
+@SuppressWarnings("all")
 @Transactional
 @Service
 public class BaseServiceImpl<T> implements BaseService<T> {
@@ -29,7 +29,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
 
     @Override
     public int insert(T entity) {
-        Map<String, Object> param = transformObj(entity, TableConstants.INSERT, null, null, null);
+        Map<String, Object> param = transformObj(entity, TableConstants.INSERT, null, null, null, null, null,null);
         if (null == param)
             return 0;
         int num = baseMapper.insert(param);
@@ -41,53 +41,102 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
+    public int insert(List<T> list) {
+        if (null == list)
+            return 0;
+        //先拿到该object的表名名，列名称
+        Map<String, Object> resultParam = transformObj(list.get(0), TableConstants.INSERT_BATCH, null, null, null, null, null,null);
+        //然后根据列名称取出对应的值
+        List<Object> columnList = (List<Object>) resultParam.get(TableConstants.COLUMNS);
+        //保存批量插入数据集合
+        List<List<Object>> batchList = new ArrayList<>();
+        if (null == columnList)
+            return 0;
+        Class clz = list.get(0).getClass();
+        Field[] fields = clz.getDeclaredFields();
+        //获取父类id属性
+        Field[] superFields = clz.getSuperclass().getDeclaredFields();
+        for (T t : list) {
+            List<Object> objectList = new ArrayList<>();
+            addParm(superFields, null, objectList, t, fields);
+            batchList.add(objectList);
+        }
+        resultParam.put(TableConstants.VALUES_LIST, batchList);
+        return baseMapper.insertBatch(resultParam);
+    }
+
+
+    @Override
     public int update(T entity) {
-        return baseMapper.update(transformObj(entity, UPDATE, null, null, null));
+        return baseMapper.update(transformObj(entity, TableConstants.UPDATE, null, null, null, null, null,null));
+    }
+
+    @Override
+    public int updateBatch(List<T> entities) {
+        return baseMapper.updateBatch(transformBatchObj(entities));
     }
 
     @Override
     public int delete(T entity) {
-        return baseMapper.delete(transformObj(entity, TableConstants.COMMON, null, null, null));
+        return baseMapper.delete(transformObj(entity, TableConstants.COMMON, null, null, null, null, null,null));
     }
 
     @Override
     public Object findById(Long id, Class<T> cls) {
         T entity = null;
         try {
-            entity = newTclass(cls);
+            entity = newTClass(cls);
         } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
         }
         Field[] fields = cls.getSuperclass().getDeclaredFields();
         for (Field field : fields) {
             if (field.getAnnotation(Id.class) != null)
-                setFieldValueByFieldName(field.getName(), entity, id);
+                setSuperField(entity, field.getName(), id);
         }
         if (null == entity)
             return null;
-        return doR(entity, baseMapper.findById(transformObj(entity, TableConstants.COMMON, null, null, null)));
+        return doR(entity, baseMapper.findById(transformObj(entity, TableConstants.COMMON, null, null, null, null, null,null)));
     }
 
     @Override
     public List<T> list(T entity, Class<T> cls) {
-        //return map2List(entity, baseMapper.list(transformObj(entity, "common")), cls);
-        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null)), cls);
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, null, null, null, null, null,null)), cls);
     }
 
     @Override
     public Object find(T entity) {
-        //return doR(entity, baseMapper.find(transformObj(entity, "common")));
-        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null)));
+        return linkTMap(entity, baseMapper.find(transformObj(entity, TableConstants.LINK, null, null, null, null, null,null)));
     }
 
     @Override
-    public Object findLinkT(T entity) {
-        return linkTMap(entity, baseMapper.findLinkT(transformObj(entity, TableConstants.LINK, null, null, null)));
+    public Object find(T entity, List<Query> queryList) {
+        return linkTMap(entity, baseMapper.find(transformObj(entity, TableConstants.LINK, null, null, null, queryList, null,null)));
     }
 
     @Override
-    public List<T> findLinkListT(T entity, Class<T> cls) {
-        return map2LinkList(baseMapper.findLinkListT(transformObj(entity, TableConstants.LINK, null, null, null)), cls);
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList) {
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, null, null, null, queryList, null,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList, List<GroupBy> groupByList) {
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, null, groupByList, null, queryList, null,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes, null, null,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes, queryList, null,null)), cls);
+    }
+
+    @Override
+    public List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList) {
+        return map2LinkList(baseMapper.list(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes, queryList, compareList,null)), cls);
     }
 
     @Override
@@ -110,24 +159,34 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         pageNo = pageNo == null ? 1 : pageNo;
         pageSize = pageSize == null ? PageBean.DEFAULT_PAGE_SIZE : pageSize;
         PageHelper.startPage(pageNo, pageSize);
-        List<T> list = findOrderLinkT(entity, cls, orderList, groupByList, likes);
+        List<T> list = list(entity, cls, orderList, groupByList, likes);
         PageInfo<T> page = new PageInfo<>(list);
         page.setList(list);
         return page;
     }
 
-    @Override
-    public List<T> findOrderLinkT(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
-        return map2LinkList(baseMapper.findOrderLinkT(transformObj(entity, TableConstants.LINK, orderList, groupByList, likes)), cls);
-    }
+
+
 
     @Override
-    public Integer count(T entity, Class<T> cls) {
-        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null));
+    public Integer count(T entity, Class<T> cls, CountField countField) {
+        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null, null, null,null));
         return num == null ? 0 : num;
     }
 
-    private static <T> T newTclass(Class<T> clazz) throws InstantiationException, IllegalAccessException {
+    @Override
+    public Integer count(T entity, Class<T> cls,CountField countField, List<Compare> compareList) {
+        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null, null, compareList,countField));
+        return num == null ? 0 : num;
+    }
+
+    @Override
+    public Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList, List<Query> queryList) {
+        Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null, queryList, compareList,countField));
+        return num == null ? 0 : num;
+    }
+
+    private static <T> T newTClass(Class<T> clazz) throws InstantiationException, IllegalAccessException {
         return clazz.newInstance();
     }
 
@@ -135,17 +194,37 @@ public class BaseServiceImpl<T> implements BaseService<T> {
      * 整合集合map-多表关联
      */
     private List<T> map2LinkList(List<Map<String, Object>> mapList, Class<T> cls) {
-        List<T> list = new ArrayList<>();
-        for (Map<String, Object> params : mapList) {
-            try {
-                T t = newTclass(cls);
-                list.add(linkTMap(t, params));
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
+        Date a = new Date();
+        if (mapList instanceof Page) {
+            Page<T> list = new Page<T>();
+            Page page = (Page) mapList;
+            list.setPageNum(page.getPageNum());
+            list.setPageSize(page.getPageSize());
+            list.setTotal(page.getTotal());
+            list.setPages(page.getPages());
+            for (Map<String, Object> params : mapList) {
+                try {
+                    T t = newTClass(cls);
+                    list.add(linkTMap(t, params));
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
             }
-
+            return list;
+        } else if (mapList instanceof ArrayList) {
+            List<T> list = new ArrayList<>();
+            for (Map<String, Object> params : mapList) {
+                try {
+                    T t = newTClass(cls);
+                    list.add(linkTMap(t, params));
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            return list;
         }
-        return list;
+        System.out.println("组装时间:" + (new Date().getTime() - a.getTime()) + "ms");
+        return null;
     }
 
 
@@ -160,6 +239,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 
@@ -175,18 +255,43 @@ public class BaseServiceImpl<T> implements BaseService<T> {
             //判断是否存在标签
             if (field.getAnnotation(Id.class) == null)
                 continue;
-            setFieldValueByFieldName(field.getName(), cls, id);
+            setSuperField(cls, field.getName(), id);
         }
     }
 
     /**
+     * insert添加参数
+     */
+    private void addParm(Field[] superFields, List<Object> keys, List<Object> values, Object t, Field[] fields) {
+        for (Field field : superFields) {
+            if (null != field.getAnnotation(Column.class) && getFieldValue(t, field) != null) {
+                if (null != keys)
+                    keys.add(field.getAnnotation(Column.class).value());
+                if (null != values)
+                    values.add(getFieldValue(t, field));
+            }
+        }
+        for (Field field : fields) {
+            //判断是否存在标签
+            if (field.getAnnotation(Column.class) != null) {
+                //列不为空
+                if (null != keys)
+                    keys.add(field.getAnnotation(Column.class).value());
+                if (null != values)
+                    values.add(getFieldValue(t, field));
+            }
+        }
+    }
+
+
+    /**
      * 扫描类属性，注入查询值
      */
-    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes) {
+    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Query> queryList, List<Compare> compareList,CountField countField) {
         //获取表名
         if (null == t.getClass().getAnnotation(Table.class))
             return null;
-
+        Date a = new Date();
         Map<String, Object> re = new LinkedHashMap<>();
         re.put(TableConstants.TABLE_NAME, t.getClass().getAnnotation(Table.class).value());
         // 拿到该类
@@ -201,63 +306,34 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                 re.put(TableConstants.KEY_VALUE, getFieldValue(t, field));
                 continue;
             }
-
             if (null != field.getAnnotation(Sql.class) && getFieldValue(t, field) != null)
                 re.put("SQL", getFieldValue(t, field));
-
         }
-
         if (TableConstants.INSERT.equals(type)) {
             List<Object> keys = new ArrayList<>();//存放列名
             List<Object> values = new ArrayList<>();//存放列值
-            for (Field field : superFields) {
-                if (null != field.getAnnotation(Column.class) && getFieldValue(t, field) != null) {
-                    keys.add(field.getAnnotation(Column.class).value());
-                    values.add(getFieldValue(t, field));
-                }
-            }
-            for (Field field : fields) {
-                //判断是否存在标签
-                if (field.getAnnotation(Column.class) != null) {
-                    //列不为空
-                    keys.add(field.getAnnotation(Column.class).value());
-                    values.add(getFieldValue(t, field));
-                }
-            }
-
+            addParm(superFields, keys, values, t, fields);
             re.put(TableConstants.COLUMNS, keys);
             re.put(TableConstants.VALUES, values);
-        } else if (UPDATE.equals(type)) {
+        } else if (TableConstants.INSERT_BATCH.equals(type)) {
+            List<Object> keys = new ArrayList<>();//存放列名
+            addParm(superFields, keys, null, t, fields);
+            re.put(TableConstants.COLUMNS, keys);
+            System.out.println("keys==" + keys);
+        } else if (TableConstants.UPDATE.equals(type)) {
             List<Map<String, Object>> d = new ArrayList<>();
             Field[] superF = clz.getSuperclass().getDeclaredFields();
             for (Field field : superF) {
-                if (null != field.getAnnotation(Column.class) && getFieldValue(t, field) != null) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put(TableConstants.COLUMN, field.getAnnotation(Column.class).value());
-                    map.put(TableConstants.COL_VALUE, getFieldValue(t, field));
-                    d.add(map);
-                }
+                addColumnVal(field, d, t);
             }
             for (Field field : fields) {
-                //判断是否存在标签
-                if (field.getAnnotation(Column.class) != null && getFieldValue(t, field) != null) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put(TableConstants.COLUMN, field.getAnnotation(Column.class).value());
-                    map.put(TableConstants.COL_VALUE, getFieldValue(t, field));
-                    d.add(map);
-                }
-
+                addColumnVal(field, d, t);
             }
             re.put(TableConstants.DATA, d);
         } else if (TableConstants.COMMON.equals(type)) {
             List<Map<String, Object>> data = new ArrayList<>();
             for (Field field : fields) {
-                Map<String, Object> map = new HashMap<>();
-                if (null != field.getAnnotation(Column.class) && getFieldValue(t, field) != null) {
-                    map.put(TableConstants.COLUMN, field.getAnnotation(Column.class).value());
-                    map.put(TableConstants.COL_VALUE, getFieldValue(t, field));
-                    data.add(map);
-                }
+                addColumnVal(field, data, t);
             }
             Map<String, Object> idMap = new HashMap<>();
             if (re.get(TableConstants.KEY_VALUE) != null) {
@@ -296,11 +372,18 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                     Map<String, Object> tableMap = new LinkedHashMap<>();
                     Class<?> cls = field.getType();
                     String table = cls.getAnnotation(Table.class).value();
-                    tableMap.put(TableConstants.TABLE_NAME, table);
+                    String tableAlias = field.getAnnotation(OneToOne.class).tableAlias();
+                    if ("".equals(tableAlias)) {
+                        tableMap.put(TableConstants.TABLE_NAME, table);
+                        tableMap.put(TableConstants.TABLE_NAME_ALIAS, table);
+                    } else {
+                        tableMap.put(TableConstants.TABLE_NAME, table + " AS " + tableAlias);
+                        tableMap.put(TableConstants.TABLE_NAME_ALIAS, tableAlias);
+                    }
                     //on字段约束条件
-                    tableMap.put("ON_FIELD", field.getAnnotation(OneToOne.class).value());
+                    tableMap.put(TableConstants.ON_FIELD, field.getAnnotation(OneToOne.class).value());
                     data.add(tableMap);
-                    stringBuilder.append(",").append(addTableFields(cls, table));
+                    stringBuilder.append(",").append(addTableFields(cls, "".equals(tableAlias) ? table : tableAlias));
                 } else
                     addParamVal(field, t, tableName, queryData);
 
@@ -311,16 +394,73 @@ public class BaseServiceImpl<T> implements BaseService<T> {
             re.put(TableConstants.DATA, data);
             re.put(TableConstants.QUERY_DATA, queryData);
             re.put(TableConstants.SCAN_FIELDS, stringBuilder.toString());
-            if (null != orderList)
-                re.put("ORDERS", orderList);
-            if (null != groupByList)
-                re.put("GROUPBYS", groupByList);
-            if (null != likes)
-                re.put("LIKES", likes);
+            if (null != orderList && orderList.size() > 0)
+                re.put(TableConstants.ORDERS, orderList);
+            if (null != groupByList && groupByList.size() > 0)
+                re.put(TableConstants.GROUPBYS, groupByList);
+            if (null != likes && likes.size() > 0)
+                re.put(TableConstants.LIKES, likes);
+            if (null != queryList && queryList.size() > 0)
+                re.put(TableConstants.QUERY, queryList);
+            if (null != compareList && compareList.size() > 0)
+                re.put(TableConstants.COMPARE, compareList);
+            if(null!=countField)
+                re.put(TableConstants.COUNT_FIELD, countField);
         }
+        System.out.println("注入时间:" + (new Date().getTime() - a.getTime()) + "ms");
         return re;
     }
 
+    /**
+     * 扫描类属性，注入查询值
+     */
+    private Map<String, Object> transformBatchObj(List<T> objects) {
+        Map<String, Object> re = new LinkedHashMap<>();
+        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<String, Object>> idList = new ArrayList<>();
+        for (Object t : objects) {
+            //获取表名
+            if (null == t.getClass().getAnnotation(Table.class))
+                return null;
+            re.put(TableConstants.TABLE_NAME, t.getClass().getAnnotation(Table.class).value());
+            // 拿到该类
+            Class<?> clz = t.getClass();
+            // 获取实体类的所有属性，返回Field数组
+            Field[] fields = clz.getDeclaredFields();
+            //获取父类id属性
+            Field[] superFields = clz.getSuperclass().getDeclaredFields();
+
+            for (Field field : superFields) {
+                if (null != field.getAnnotation(Id.class) && getFieldValue(t, field) != null) {
+                    Map<String, Object> idMap = new HashMap<>();
+                    idMap.put(TableConstants.KEY_ID, field.getAnnotation(Id.class).value());
+                    idMap.put(TableConstants.KEY_VALUE, getFieldValue(t, field));
+                    idList.add(idMap);
+                    continue;
+                }
+                addColumnVal(field, list, t);
+            }
+            for (Field field : fields) {
+                addColumnVal(field, list, t);
+            }
+
+        }
+        re.put(TableConstants.DATA, list);
+        re.put(TableConstants.IDS, idList);
+        return re;
+    }
+
+    /**
+     * 注入column的值
+     */
+    private void addColumnVal(Field field, List<Map<String, Object>> list, Object object) {
+        if (null != field.getAnnotation(Column.class) && getFieldValue(object, field) != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(TableConstants.COLUMN, field.getAnnotation(Column.class).value());
+            map.put(TableConstants.COL_VALUE, getFieldValue(object, field));
+            list.add(map);
+        }
+    }
 
     /**
      * 给param注入值
@@ -373,10 +513,10 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         Field[] superFields = clz.getSuperclass().getDeclaredFields();
         for (Field field : superFields) {
             if (field.getAnnotation(Id.class) != null)
-                setFieldValueByFieldName(field.getName(), obj, params.get(field.getAnnotation(Id.class).value()));
+                setSuperField(obj, field.getName(), params.get(field.getAnnotation(Id.class).value()));
 
             if (field.getAnnotation(Column.class) != null)
-                setFieldValueByFieldName(field.getName(), obj, params.get(field.getAnnotation(Column.class).value()));
+                setSuperField(obj, field.getName(), params.get(field.getAnnotation(Column.class).value()));
         }
 
 
@@ -405,11 +545,11 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         for (Field field : superFields) {
             if (field.getAnnotation(Id.class) != null) {
                 id = params.get(tableName + "_" + field.getAnnotation(Id.class).value());
-                setFieldValueByFieldName(field.getName(), obj, id);
+                setSuperField(obj, field.getName(), id);
             }
 
             if (field.getAnnotation(Column.class) != null)
-                setFieldValueByFieldName(field.getName(), obj, params.get(tableName + "_" + field.getAnnotation(Column.class).value()));
+                setSuperField(obj, field.getName(), params.get(tableName + "_" + field.getAnnotation(Column.class).value()));
         }
 
 
@@ -437,16 +577,24 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                     String pojoClassName = t.toString().replace("java.util.List<", "").replace(">", "");
                     Object newClass = Class.forName(pojoClassName).newInstance();
                     Field[] suFields = newClass.getClass().getDeclaredFields();
+
                     for (Field f : suFields) {
                         if (f.getAnnotation(Column.class) == null)
                             continue;
-                        if (field.getAnnotation(OneToMany.class).value().equals(f.getAnnotation(Column.class).value()))
+                        if (field.getAnnotation(OneToMany.class).value().equals(f.getAnnotation(Column.class).value())) {
                             setFieldValueByFieldName(f.getName(), newClass, id);
+                            List<Query> queryList = new ArrayList<>();
+                            if (field.getAnnotation(OneToMany.class).where() != null) {
+                                for (com.smart.mybatis.annotation.Query query : field.getAnnotation(OneToMany.class).where())
+                                    queryList.add(new Query(query.key(), query.value()));
+                            }
+                            List<Map<String, Object>> mapList = baseMapper.list(transformObj(newClass, TableConstants.LINK, null, null, null, queryList, null,null));
+                            List<Object> objectList = parseList(mapList, newClass);
+                            setFieldValueByFieldName(field.getName(), obj, objectList);
+                        }
 
                     }
-                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null));
-                    List<Object> objectList = parseList(mapList, newClass);
-                    setFieldValueByFieldName(field.getName(), obj, objectList);
+
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -477,11 +625,11 @@ public class BaseServiceImpl<T> implements BaseService<T> {
         for (Field field : superFields) {
             if (field.getAnnotation(Id.class) != null) {
                 id = params.get(tableName + "_" + field.getAnnotation(Id.class).value());
-                setFieldValueByFieldName(field.getName(), obj, id);
+                setSuperField(obj, field.getName(), id);
             }
 
             if (field.getAnnotation(Column.class) != null)
-                setFieldValueByFieldName(field.getName(), obj, params.get(tableName + "_" + field.getAnnotation(Column.class).value()));
+                setSuperField(obj, field.getName(), params.get(tableName + "_" + field.getAnnotation(Column.class).value()));
         }
 
 
@@ -509,16 +657,25 @@ public class BaseServiceImpl<T> implements BaseService<T> {
                     String pojoClassName = t.toString().replace("java.util.List<", "").replace(">", "");
                     Object newClass = Class.forName(pojoClassName).newInstance();
                     Field[] suFields = newClass.getClass().getDeclaredFields();
+
                     for (Field f : suFields) {
                         if (f.getAnnotation(Column.class) == null)
                             continue;
-                        if (field.getAnnotation(OneToMany.class).value().equals(f.getAnnotation(Column.class).value()))
+                        if (field.getAnnotation(OneToMany.class).value().equals(f.getAnnotation(Column.class).value())) {
+                            List<Query> queryList = new ArrayList<>();
                             setFieldValueByFieldName(f.getName(), newClass, id);
+                            if (field.getAnnotation(OneToMany.class).where() != null) {
+                                for (com.smart.mybatis.annotation.Query query : field.getAnnotation(OneToMany.class).where())
+                                    queryList.add(new Query(query.key(), query.value()));
 
+                            }
+                            List<Map<String, Object>> mapList = baseMapper.list(transformObj(newClass, TableConstants.LINK, null, null, null, queryList, null,null));
+                            queryList.clear();
+                            List<Object> objectList = parseList(mapList, newClass);
+                            setFieldValueByFieldName(field.getName(), obj, objectList);
+                        }
                     }
-                    List<Map<String, Object>> mapList = baseMapper.findLinkListT(transformObj(newClass, TableConstants.LINK, null, null, null));
-                    List<Object> objectList = parseList(mapList, newClass);
-                    setFieldValueByFieldName(field.getName(), obj, objectList);
+
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -537,7 +694,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     private List<Object> parseList(List<Map<String, Object>> mapList, Object newClass) {
         List<Object> objectList = new ArrayList<>();
         for (Map<String, Object> param : mapList) {
-            Class cls=newClass.getClass();
+            Class cls = newClass.getClass();
             try {
                 objectList.add(linkTMapV2(cls.newInstance(), param));
             } catch (InstantiationException | IllegalAccessException e) {
@@ -548,7 +705,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     /**
-     * 对于副表onetoone属性封装
+     * 对于副表oneToOne属性封装
      */
     private void addViceField(Object object, Map<String, Object> params) {
         Class<?> clz = object.getClass();
@@ -608,14 +765,14 @@ public class BaseServiceImpl<T> implements BaseService<T> {
             f.set(object, value);
         } catch (Exception e) {
             //注入是比说明该属性不存在于子类中，此时需要向父类属性进行扫描
-            getSuperField(object, fieldName, value);
+            setSuperField(object, fieldName, value);
         }
     }
 
     /**
      * 通过反射获取父类的值，并注入值
      */
-    private void getSuperField(Object paramClass, String paramString, Object value) {
+    private void setSuperField(Object paramClass, String paramString, Object value) {
         try {
             Field field = paramClass.getClass().getSuperclass().getDeclaredField(paramString);
             field.setAccessible(true);

@@ -1,21 +1,21 @@
 package com.smart.mybatis.service;
 
 
-
 import com.github.pagehelper.PageInfo;
 import com.smart.mybatis.page.Pageable;
-import com.smart.mybatis.pojo.GroupBy;
-import com.smart.mybatis.pojo.Like;
-import com.smart.mybatis.pojo.OrderBy;
+import com.smart.mybatis.pojo.*;
 
 import java.util.List;
-import java.util.Map;
 
 public interface BaseService<T> {
 
     int insert(T entity);
 
+    int insert(List<T> list);
+
     int update(T entity);
+
+    int updateBatch(List<T> entities);
 
     int delete(T entity);
 
@@ -23,19 +23,29 @@ public interface BaseService<T> {
 
     List<T> list(T entity, Class<T> cls);
 
+    List<T> list(T entity, Class<T> cls, List<Query> queryList);
+
+    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<GroupBy> groupByList);
+
+    List<T> list(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+
+    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+
+    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
+
     Object find(T entity);
 
-    Object findLinkT(T entity);
-
-    List<T> findLinkListT(T entity, Class<T> cls);
+    Object find(T entity, List<Query> queryList);
 
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls);
 
-
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
-    List<T> findOrderLinkT(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
-    /**count*/
-    Integer count(T entity, Class<T> cls);
+    Integer count(T entity, Class<T> cls, CountField countField);
+
+
+    Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList);
+
+    Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList, List<Query> queryList);
 }

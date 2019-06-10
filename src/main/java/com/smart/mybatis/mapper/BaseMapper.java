@@ -9,6 +9,8 @@ import java.util.Map;
 @Mapper
 public interface BaseMapper {
 
+    int insertBatch(Map<String, Object> params);
+
     int insert(Map<String, Object> params);
 
     int update(Map<String, Object> params);
@@ -21,13 +23,9 @@ public interface BaseMapper {
 
     HashMap<String,Object> find(Map<String, Object> params);
 
-    HashMap<String,Object> findLinkT(Map<String, Object> params);
-
-    List<Map<String,Object>> findLinkListT(Map<String, Object> params);
-
-    //带有排序
-    List<Map<String,Object>> findOrderLinkT(Map<String, Object> params);
-
     /**count*/
     Integer count(Map<String, Object> params);
+
+    /**批量更新*/
+    int updateBatch(Map<String, Object> params);
 }

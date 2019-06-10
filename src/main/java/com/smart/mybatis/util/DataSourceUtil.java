@@ -17,10 +17,10 @@ public class DataSourceUtil {
     }
 
     /**
-     * 27      * 获取数据源
-     * 28      *
-     * 29      * @throws SQLException
-     * 30
+     *       * 获取数据源
+     *       *
+     *       * @throws SQLException
+     *
      */
     public static Connection getConnection(String url, String user,
                                            String password) throws SQLException {

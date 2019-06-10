@@ -44,11 +44,11 @@ public class DatabaseManager {
                     continue;
                 String tableName = object.getClass().getAnnotation(Table.class).value();
 
-                if (isTableExist(url, username, password, "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA=(SELECT DATABASE()) AND `table_name` ='" + tableName + "'")) {
+                if (isTableExist(url, username, password, "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA=(SELECT DATABASE()) AND `table_name` ='" + tableName + "'" )) {
                     String excuteAddSql = "";
                     String excuteModifySql = "";
                     //表已经存在
-                    List<TableField> map = findTableFields(url, username, password, "SELECT column_name,column_type,column_default FROM information_schema.columns WHERE `table_name` ='" + tableName + "'");
+                    List<TableField> map = findTableFields(url, username, password, "SELECT column_name,column_type,column_default FROM information_schema.columns WHERE `table_name` ='" + tableName + "'"+" AND TABLE_SCHEMA='"+url.split("//")[1].split("/")[1].split("\\?")[0]+"'");
                     //遍历属性，如果在结果集中不存在，则需要添加字段
                     Field[] superFields = object.getClass().getSuperclass().getDeclaredFields();
                     excuteAddSql += addFiledSql(superFields, map);
@@ -58,7 +58,7 @@ public class DatabaseManager {
                     excuteModifySql += addModifyFiledSql(fields, map);
                     if (excuteAddSql.length() != 0) {
                         excuteAddSql = excuteAddSql.substring(0, excuteAddSql.length() - 1);
-                        excuteAddSql = "ALTER TABLE " + tableName + " ADD " + excuteAddSql;
+                        excuteAddSql = "ALTER TABLE " + tableName + excuteAddSql;
                         executeSql(excuteAddSql, url, username, password);
                     }
                     if (excuteModifySql.length() != 0) {
@@ -111,7 +111,7 @@ public class DatabaseManager {
             if (field.getAnnotation(Column.class) != null) {
                 String keyColumn = field.getAnnotation(Column.class).value();
                 if (!isSameFieldName(map, keyColumn))
-                    stringBuilder.append(keyColumn).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
+                    stringBuilder.append(" ADD ").append(keyColumn).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
             }
 
         }
@@ -187,8 +187,9 @@ public class DatabaseManager {
         try {
             Connection con = DataSourceUtil.getConnection(url, username, password);
             Statement sm = con.createStatement();   //创建对象
-            sm.execute(executeSql);
             System.out.println("====>>" + executeSql);
+            sm.execute(executeSql);
+
             ResultSet resultSet = sm.getResultSet();
             map = convertList(resultSet);
             sm.close();
