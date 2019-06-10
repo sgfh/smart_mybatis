@@ -1,8 +1,9 @@
-package com.smart.mybatis.pojo;
+package com.smart.mybatis.model;
 
 import com.smart.mybatis.annotation.Column;
 import com.smart.mybatis.annotation.OneToMany;
 import com.smart.mybatis.annotation.Table;
+import com.smart.mybatis.pojo.BasePojo;
 
 import java.util.List;
 

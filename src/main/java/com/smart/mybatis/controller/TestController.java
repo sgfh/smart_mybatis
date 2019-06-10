@@ -1,9 +1,9 @@
 package com.smart.mybatis.controller;
 
 import com.github.pagehelper.PageInfo;
+import com.smart.mybatis.model.Student;
+import com.smart.mybatis.model.Teacher;
 import com.smart.mybatis.pojo.BaseVo;
-import com.smart.mybatis.pojo.Student;
-import com.smart.mybatis.pojo.Teacher;
 import com.smart.mybatis.service.StudentService;
 import com.smart.mybatis.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;

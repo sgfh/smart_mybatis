@@ -1,18 +1,22 @@
-package com.smart.mybatis.pojo;
+package com.smart.mybatis.model;
 
+import com.smart.mybatis.annotation.Column;
 import com.smart.mybatis.annotation.OneToOne;
 import com.smart.mybatis.annotation.Table;
+import com.smart.mybatis.pojo.BasePojo;
 
 @Table("tb_student")
 public class Student extends BasePojo {
     /**
      * 姓名
      */
+    @Column(value = "name", columnDefinition = "VARCHAR(20)")
     private String name;
     /**
      * 老师id
      */
-    private Long teacher_id;
+    @Column(value = "teacher_id", columnDefinition = "BIGINT(10)")
+    private Long teacherId;
 
     /**
      * 所属老师
@@ -28,13 +32,6 @@ public class Student extends BasePojo {
         this.name = name;
     }
 
-    public Long getTeacher_id() {
-        return teacher_id;
-    }
-
-    public void setTeacher_id(Long teacher_id) {
-        this.teacher_id = teacher_id;
-    }
 
     public Teacher getTeacher() {
         return teacher;
@@ -42,5 +39,13 @@ public class Student extends BasePojo {
 
     public void setTeacher(Teacher teacher) {
         this.teacher = teacher;
+    }
+
+    public Long getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(Long teacherId) {
+        this.teacherId = teacherId;
     }
 }
