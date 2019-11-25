@@ -12,4 +12,10 @@ import java.lang.annotation.*;
 @Documented
 public @interface Table {
     String value();
+    //分表个数，默认是1个不分表
+    int tableCount() default 1;
+    //分表规则
+    String rule() default "";
+    //是否要建表
+    boolean isCreate() default true;
 }

@@ -25,9 +25,9 @@
         ) VALUES
         <foreach collection="VALUES_LIST" item="item" index="index" separator=",">
             (
-        <foreach collection="item" item="item_" index="index_" separator=",">
-            #{item_}
-        </foreach>
+            <foreach collection="item" item="item_" index="index_" separator=",">
+                #{item_}
+            </foreach>
             )
         </foreach>
 
@@ -155,7 +155,15 @@
         <foreach collection="DATA" item="item" index="index" separator=",">
             ${item.COLUMN} = #{item.COL_VALUE}
         </foreach>
-        WHERE ${KEY_ID} = #{KEY_VALUE}
+        WHERE
+        <if test="_parameter.containsKey('KEY_ID')">
+            ${KEY_ID} = #{KEY_VALUE}
+        </if>
+        <if test="_parameter.containsKey('UPDATE_LIMIT')">
+            <foreach collection="UPDATE_LIMIT" item="item" index="index" separator=" AND " close="  ">
+                ${item.field} = ${item.value}
+            </foreach>
+        </if>
     </update>
 
     <update id="updateBatch" parameterType="java.util.HashMap">

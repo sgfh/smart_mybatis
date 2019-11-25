@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+
+    <!-- name="TESTDB"是在server.xml中配置<property name="schemas">TESTDB</property>-->
+    <schema name="HOUSE_MASTER" checkSQLschema="false" sqlMaxLimit="100">
+        <!-- 与mysql数据库中的表名对应 subTables="t_order$1-3"是配置分表的 对应mysql t_order1，t_order2，t_order3表的
+        primaryKey="id" 是主键id
+        -->
+        <table name="tb_rez_rd" primaryKey="id" autoIncrement="true" subTables="tb_rez_rd_$1-20" dataNode="dn1"
+               rule="mod-long">
+
+        </table>
+
+        <table name="tb_user" dataNode="dn1"/>
+        <table name="tb_admin" dataNode="dn1"/>
+
+        <table name="tb_auth" dataNode="dn1"/>
+        <table name="tb_building" dataNode="dn1"/>
+        <table name="tb_campus" dataNode="dn1"/>
+        <table name="tb_dormitory" dataNode="dn1"/>
+        <table name="tb_dormitory_setting" dataNode="dn1"/>
+        <table name="tb_education" dataNode="dn1"/>
+        <table name="tb_equipment" dataNode="dn1"/>
+        <table name="tb_equipment_group" dataNode="dn1"/>
+        <table name="tb_equipment_zone" dataNode="dn1"/>
+        <table name="tb_faculty" dataNode="dn1"/>
+        <table name="tb_grade" dataNode="dn1"/>
+        <table name="tb_group" dataNode="dn1"/>
+        <table name="tb_late_calendar" dataNode="dn1"/>
+        <table name="tb_major" dataNode="dn1"/>
+        <table name="tb_page_setting" dataNode="dn1"/>
+        <table name="tb_person" dataNode="dn1"/>
+        <table name="tb_user_exception" dataNode="dn1"/>
+        <table name="tb_user_status" dataNode="dn1"/>
+        <table name="tb_visit_reason" dataNode="dn1"/>
+        <table name="tb_voice_setting" dataNode="dn1"/>
+        <table name="tb_rez_rd_1" dataNode="dn1"/>
+        <table name="tb_rez_rd_2" dataNode="dn1"/>
+        <table name="tb_rez_rd_3" dataNode="dn1"/>
+        <table name="tb_rez_rd_4" dataNode="dn1"/>
+        <table name="tb_rez_rd_5" dataNode="dn1"/>
+        <table name="tb_rez_rd_6" dataNode="dn1"/>
+        <table name="tb_rez_rd_7" dataNode="dn1"/>
+        <table name="tb_rez_rd_8" dataNode="dn1"/>
+        <table name="tb_rez_rd_9" dataNode="dn1"/>
+        <table name="tb_rez_rd_10" dataNode="dn1"/>
+        <table name="tb_rez_rd_11" dataNode="dn1"/>
+        <table name="tb_rez_rd_12" dataNode="dn1"/>
+        <table name="tb_rez_rd_13" dataNode="dn1"/>
+        <table name="tb_rez_rd_14" dataNode="dn1"/>
+        <table name="tb_rez_rd_15" dataNode="dn1"/>
+        <table name="tb_rez_rd_16" dataNode="dn1"/>
+        <table name="tb_rez_rd_17" dataNode="dn1"/>
+        <table name="tb_rez_rd_18" dataNode="dn1"/>
+        <table name="tb_rez_rd_19" dataNode="dn1"/>
+        <table name="tb_rez_rd_20" dataNode="dn1"/>
+
+    </schema>
+    <!--配置mysql数据库testdb2  mycat逻辑库名为 dn1-->
+    <dataNode name="dn1" dataHost="localhost1" database="house_master"/>
+    <!--配置数据类型 balance="0"读写不分离 -->
+    <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0" writeType="0" dbType="mysql" dbDriver="native"
+              switchType="1" slaveThreshold="100">
+        <!--心跳包 -->
+        <heartbeat>select root()</heartbeat>
+        <!--配置mysql数据 账户密码 -->
+        <writeHost host="hostM1" url="47.97.206.112:3306" user="root" password="Tang123_"/>
+    </dataHost>
+</mycat:schema>

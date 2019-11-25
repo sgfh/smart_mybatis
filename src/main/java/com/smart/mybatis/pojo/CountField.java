@@ -18,4 +18,11 @@ public class CountField implements Serializable {
     public void setField(String field) {
         this.field = field;
     }
+
+    public CountField() {
+    }
+
+    public CountField(String field) {
+        this.field = field;
+    }
 }

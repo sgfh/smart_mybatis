@@ -6,6 +6,8 @@ import com.smart.mybatis.annotation.Id;
 import com.smart.mybatis.annotation.Table;
 import com.smart.mybatis.pojo.TableField;
 import com.smart.mybatis.util.DataSourceUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +24,7 @@ import java.util.jar.JarFile;
  * 自动创建数据库表
  */
 public class DatabaseManager {
-
+    protected static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
     public DatabaseManager() {
 
     }
@@ -31,69 +33,125 @@ public class DatabaseManager {
     private static final String CLASS_FILE_PREFIX = File.separator + "classes" + File.separator;
     private static final String PACKAGE_SEPARATOR = ".";
 
-    public void init(String url, String packageName, String username, String password) {
+    public void init(String url, String[] packageNames, String username, String password) {
         Date begin = new Date();
-        //获取包下所有class类，获取到后，扫描注解，完成数据库表生成
-        List<String> classList = getClazzName(packageName, false);
-        for (String className : classList) {
-            String valueName;
-            StringBuilder stringBuilder = new StringBuilder();
-            try {
-                Object object = Class.forName(className).newInstance();
-                if (object.getClass().getAnnotation(Table.class) == null)
-                    continue;
-                String tableName = object.getClass().getAnnotation(Table.class).value();
+        for (String packageName:packageNames) {
+            logger.info("当前同步包:"+packageName);
+            //获取包下所有class类，获取到后，扫描注解，完成数据库表生成
+            List<String> classList = getClazzName(packageName, false);
+            logger.info("classList=========="+classList.size());
+            for (String className : classList) {
+                String valueName;
+                StringBuilder stringBuilder = new StringBuilder();
+                try {
+                    Object object = Class.forName(className).newInstance();
+                    if (object.getClass().getAnnotation(Table.class) == null)
+                        continue;
+                    if (!object.getClass().getAnnotation(Table.class).isCreate())
+                        continue;
 
-                if (isTableExist(url, username, password, "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA=(SELECT DATABASE()) AND `table_name` ='" + tableName + "'" )) {
-                    String excuteAddSql = "";
-                    String excuteModifySql = "";
-                    //表已经存在
-                    List<TableField> map = findTableFields(url, username, password, "SELECT column_name,column_type,column_default FROM information_schema.columns WHERE `table_name` ='" + tableName + "'"+" AND TABLE_SCHEMA='"+url.split("//")[1].split("/")[1].split("\\?")[0]+"'");
-                    //遍历属性，如果在结果集中不存在，则需要添加字段
+                    String tableName = object.getClass().getAnnotation(Table.class).value();
+                    int tableCount = object.getClass().getAnnotation(Table.class).tableCount();
+                    String rule = object.getClass().getAnnotation(Table.class).rule();
+                    //保存已存在的table名称
+                    Map<String, String> tableMap = new HashMap<>();
+                    for (int c = 1; c <= tableCount; c++) {
+                        String localTableName = tableName;
+                        if (tableCount > 1)
+                            localTableName = tableName + rule + c;
+                        if (isTableExist(url, username, password, "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA=(SELECT DATABASE()) AND `table_name` ='" + localTableName + "'")) {
+                            String excuteAddSql = "";
+                            String excuteModifySql = "";
+                            //表已经存在
+                            List<TableField> map = findTableFields(url, username, password, "SELECT column_name,column_type,column_default FROM information_schema.columns WHERE `table_name` ='" + localTableName + "'" + " AND TABLE_SCHEMA='" + (url.split("//")[1].split("/")[1].split("\\?")[0]).toLowerCase() + "'");
+                            //遍历属性，如果在结果集中不存在，则需要添加字段
+                            Field[] superFields = object.getClass().getSuperclass().getDeclaredFields();
+                            excuteAddSql += addFiledSql(superFields, map);
+                            excuteModifySql += addModifyFiledSql(superFields, map);
+                            Field[] fields = object.getClass().getDeclaredFields();
+                            excuteAddSql += addFiledSql(fields, map);
+                            excuteModifySql += addModifyFiledSql(fields, map);
+                            if (excuteAddSql.length() != 0) {
+                                excuteAddSql = excuteAddSql.substring(0, excuteAddSql.length() - 1);
+                                excuteAddSql = "ALTER TABLE " + localTableName + excuteAddSql;
+                                logger.info("localTableName========" + localTableName);
+                                executeSql(excuteAddSql, url, username, password);
+                            }
+                            if (excuteModifySql.length() != 0) {
+                                excuteModifySql = "ALTER TABLE " + localTableName + excuteModifySql.substring(0, excuteModifySql.length() - 1);
+                                executeSql(excuteModifySql, url, username, password);
+                            }
+                            tableMap.put(localTableName, localTableName);
+                        }
+                    }
+                    //保存索引集合
+                    List<String> indexList = new ArrayList<>();
+                    //父类，此时扫描出父类的注解
                     Field[] superFields = object.getClass().getSuperclass().getDeclaredFields();
-                    excuteAddSql += addFiledSql(superFields, map);
-                    excuteModifySql += addModifyFiledSql(superFields, map);
+                    for (Field superField : superFields) {
+                        if (superField.getAnnotation(GeneratedValue.class) != null)
+                            stringBuilder.append(superField.getAnnotation(Id.class).value()).append(" ").append(superField.getAnnotation(Id.class).columnDefinition()).append(" ").append("AUTO_INCREMENT PRIMARY KEY,");
+
+                        if (superField.getAnnotation(Column.class) != null)
+                            stringBuilder.append(superField.getAnnotation(Column.class).value()).append(" ").append(superField.getAnnotation(Column.class).columnDefinition()).append(isNull(superField.getAnnotation(Column.class).isNull())).append(",");
+
+                        if (superField.getAnnotation(Column.class) != null && superField.getAnnotation(Column.class).index())
+                            indexList.add(superField.getAnnotation(Column.class).value());
+                    }
                     Field[] fields = object.getClass().getDeclaredFields();
-                    excuteAddSql += addFiledSql(fields, map);
-                    excuteModifySql += addModifyFiledSql(fields, map);
-                    if (excuteAddSql.length() != 0) {
-                        excuteAddSql = excuteAddSql.substring(0, excuteAddSql.length() - 1);
-                        excuteAddSql = "ALTER TABLE " + tableName + excuteAddSql;
-                        executeSql(excuteAddSql, url, username, password);
+                    for (Field field : fields) {
+                        Column column = field.getAnnotation(Column.class);
+                        if (column != null)
+                            stringBuilder.append(column.value()).append(" ").append(column.columnDefinition()).append(isNull(column.isNull())).append(",");
+                        if (column != null && column.index())
+                            indexList.add(column.value());
                     }
-                    if (excuteModifySql.length() != 0) {
-                        excuteModifySql = "ALTER TABLE " + tableName + excuteModifySql.substring(0, excuteModifySql.length() - 1);
-                        executeSql(excuteModifySql, url, username, password);
+                    valueName = stringBuilder.toString().substring(0, stringBuilder.toString().length() - 1);
+                    if (tableCount == 1) {
+                        if (tableMap.get(tableName) != null && !"".equals(tableName))
+                            continue;
+                        String executeSql = "CREATE TABLE " + tableName + "(" + valueName + ")";
+                        //表不存在，直接生成
+                        executeSql(executeSql, url, username, password);
+                        //新建索引
+                        logger.info("indexList.size()======" + indexList.size());
+                        if (indexList.size() > 0) {
+                            for (String s : indexList)
+                                executeSql("ALTER TABLE " + tableName + " ADD index " + s + "(" + s + "); ", url, username, password);
+                        }
+                    } else {
+                        for (int count = 0; count < tableCount; count++) {
+                            String lTableName = (tableName + rule + (count + 1));
+                            if (tableMap.get(lTableName) != null && !"".equals(lTableName))
+                                continue;
+                            String executeSql = "CREATE TABLE " + lTableName + "(" + valueName + ")";
+                            //表不存在，直接生成
+                            executeSql(executeSql, url, username, password);
+                            if (indexList.size() > 0) {
+                                for (String s : indexList)
+                                    executeSql("ALTER TABLE " + tableName + " ADD index " + s + "(" + s + "); ", url, username, password);
+                            }
+                        }
                     }
-                    continue;
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
                 }
-
-                //父类，此时扫描出父类的注解
-                Field[] superFields = object.getClass().getSuperclass().getDeclaredFields();
-                for (Field superField : superFields) {
-                    if (superField.getAnnotation(GeneratedValue.class) != null)
-                        stringBuilder.append(superField.getAnnotation(Id.class).value()).append(" ").append(superField.getAnnotation(Id.class).columnDefinition()).append(" ").append("AUTO_INCREMENT PRIMARY KEY,");
-
-                    if (superField.getAnnotation(Column.class) != null)
-                        stringBuilder.append(superField.getAnnotation(Column.class).value()).append(" ").append(superField.getAnnotation(Column.class).columnDefinition()).append(isNull(superField.getAnnotation(Column.class).isNull())).append(",");
-                }
-                Field[] fields = object.getClass().getDeclaredFields();
-                for (Field field : fields) {
-                    if (field.getAnnotation(Column.class) != null)
-                        stringBuilder.append(field.getAnnotation(Column.class).value()).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
-                }
-                valueName = stringBuilder.toString().substring(0, stringBuilder.toString().length() - 1);
-                String executeSql = "CREATE TABLE " + tableName + "(" + valueName + ")";
-                //表不存在，直接生成
-                executeSql(executeSql, url, username, password);
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
             }
         }
         Date end = new Date();
-        System.out.println("====>>init smart table time:" + (end.getTime() - begin.getTime()) + "ms");
+        logger.info("====>>init smart table time:" + (end.getTime() - begin.getTime()) + "ms");
     }
 
+    /**
+     * 添加索引
+     */
+    private void addIndex(boolean isCheck, String url, String tableName, String column, String username, String password) {
+        if (!isCheck) {
+            String executeSql = "ALTER TABLE '" + tableName + "' ADD INDEX index_name('" + column + "'); ";
+            //表不存在，直接生成
+            executeSql(executeSql, url, username, password);
+        }
+    }
 
     /**
      * 判断字段null
@@ -112,6 +170,7 @@ public class DatabaseManager {
                 String keyColumn = field.getAnnotation(Column.class).value();
                 if (!isSameFieldName(map, keyColumn))
                     stringBuilder.append(" ADD ").append(keyColumn).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
+
             }
 
         }
@@ -166,8 +225,9 @@ public class DatabaseManager {
         try {
             Connection con = DataSourceUtil.getConnection(url, username, password);
             Statement sm = con.createStatement();   //创建对象
+            logger.info("====>>" + executeSql);
             sm.execute(executeSql);
-            System.out.println("====>>" + executeSql);
+
             ResultSet resultSet = sm.getResultSet();
             if (resultSet.next())
                 flag = true;
@@ -187,7 +247,7 @@ public class DatabaseManager {
         try {
             Connection con = DataSourceUtil.getConnection(url, username, password);
             Statement sm = con.createStatement();   //创建对象
-            System.out.println("====>>" + executeSql);
+            logger.info("====>>" + executeSql);
             sm.execute(executeSql);
 
             ResultSet resultSet = sm.getResultSet();
@@ -228,7 +288,7 @@ public class DatabaseManager {
      */
     private void executeSql(String executeSql, String url, String username, String password) {
         try {
-            System.out.println("====>>" + executeSql);
+            logger.info("====>>" + executeSql);
             Connection con = getConnection(url, username, password);
             Statement sm = con.createStatement();   //创建对象
             sm.execute(executeSql);
@@ -266,9 +326,12 @@ public class DatabaseManager {
         List<String> result = new ArrayList<>();
         String suffixPath = packageName.replaceAll("\\.", "/");
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        logger.info("suffixPath====="+suffixPath);
         try {
             Enumeration<URL> urls = loader.getResources(suffixPath);
+
             while (urls.hasMoreElements()) {
+                System.out.println("urls=========================");
                 URL url = urls.nextElement();
                 if (url != null) {
                     String protocol = url.getProtocol();
@@ -359,11 +422,8 @@ public class DatabaseManager {
      *
      * @param jarFile
      * @param packageName 包名
-     *
      * @param flag        是否需要迭代遍历
-     *
      * @return List
-     *
      */
     private static List<String> getAllClassNameByJar(JarFile jarFile, String packageName, boolean flag) {
         List<String> result = new ArrayList<>();

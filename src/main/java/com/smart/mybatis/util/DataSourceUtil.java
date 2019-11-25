@@ -10,17 +10,16 @@ public class DataSourceUtil {
      17      */
     static {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     *       * 获取数据源
-     *       *
-     *       * @throws SQLException
-     *
+     * * 获取数据源
+     * *
+     * * @throws SQLException
      */
     public static Connection getConnection(String url, String user,
                                            String password) throws SQLException {

@@ -15,6 +15,8 @@ public interface BaseService<T> {
 
     int update(T entity);
 
+    int update(T entity, List<UpdateColumn> limitList);
+
     int updateBatch(List<T> entities);
 
     int delete(T entity);
@@ -40,7 +42,7 @@ public interface BaseService<T> {
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls);
 
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
-
+    PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
 
     Integer count(T entity, Class<T> cls, CountField countField);
 

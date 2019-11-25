@@ -32,4 +32,5 @@ public class TableConstants {
     public static final String COMPARE="COMPARE";
     public static final String COUNT_FIELD="COUNT_FIELD";
     public static final String ON_FIELD="ON_FIELD";
+    public static final String UPDATE_LIMIT="UPDATE_LIMIT";
 }

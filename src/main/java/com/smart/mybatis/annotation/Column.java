@@ -15,4 +15,5 @@ public @interface Column {
     String columnDefinition();
     boolean unique() default false;
     boolean isNull() default false;
+    boolean index() default false;
 }

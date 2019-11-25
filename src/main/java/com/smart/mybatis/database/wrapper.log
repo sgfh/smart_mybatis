@@ -1,0 +1,30 @@
+STATUS | wrapper  | 2019/06/15 13:05:01 | --> Wrapper Started as Daemon
+STATUS | wrapper  | 2019/06/15 13:05:01 | Launching a JVM...
+INFO   | jvm 1    | 2019/06/15 13:05:02 | Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=64M; support was removed in 8.0
+INFO   | jvm 1    | 2019/06/15 13:05:02 | Wrapper (Version 3.2.3) http://wrapper.tanukisoftware.org
+INFO   | jvm 1    | 2019/06/15 13:05:02 |   Copyright 1999-2006 Tanuki Software, Inc.  All Rights Reserved.
+INFO   | jvm 1    | 2019/06/15 13:05:02 | 
+INFO   | jvm 1    | 2019/06/15 13:05:03 | log4j:WARN No appenders could be found for logger (io.mycat.memory.MyCatMemory).
+INFO   | jvm 1    | 2019/06/15 13:05:03 | log4j:WARN Please initialize the log4j system properly.
+INFO   | jvm 1    | 2019/06/15 13:05:03 | log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+STATUS | wrapper  | 2019/06/15 13:05:05 | <-- Wrapper Stopped
+STATUS | wrapper  | 2019/06/15 13:10:08 | --> Wrapper Started as Daemon
+STATUS | wrapper  | 2019/06/15 13:10:08 | Launching a JVM...
+INFO   | jvm 1    | 2019/06/15 13:10:08 | Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=64M; support was removed in 8.0
+INFO   | jvm 1    | 2019/06/15 13:10:09 | Wrapper (Version 3.2.3) http://wrapper.tanukisoftware.org
+INFO   | jvm 1    | 2019/06/15 13:10:09 |   Copyright 1999-2006 Tanuki Software, Inc.  All Rights Reserved.
+INFO   | jvm 1    | 2019/06/15 13:10:09 | 
+INFO   | jvm 1    | 2019/06/15 13:10:09 | log4j:WARN No appenders could be found for logger (io.mycat.memory.MyCatMemory).
+INFO   | jvm 1    | 2019/06/15 13:10:09 | log4j:WARN Please initialize the log4j system properly.
+INFO   | jvm 1    | 2019/06/15 13:10:09 | log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+STATUS | wrapper  | 2019/06/15 13:10:12 | <-- Wrapper Stopped
+STATUS | wrapper  | 2019/06/15 13:13:04 | --> Wrapper Started as Daemon
+STATUS | wrapper  | 2019/06/15 13:13:04 | Launching a JVM...
+INFO   | jvm 1    | 2019/06/15 13:13:04 | Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=64M; support was removed in 8.0
+INFO   | jvm 1    | 2019/06/15 13:13:05 | Wrapper (Version 3.2.3) http://wrapper.tanukisoftware.org
+INFO   | jvm 1    | 2019/06/15 13:13:05 |   Copyright 1999-2006 Tanuki Software, Inc.  All Rights Reserved.
+INFO   | jvm 1    | 2019/06/15 13:13:05 | 
+INFO   | jvm 1    | 2019/06/15 13:13:05 | log4j:WARN No appenders could be found for logger (io.mycat.memory.MyCatMemory).
+INFO   | jvm 1    | 2019/06/15 13:13:05 | log4j:WARN Please initialize the log4j system properly.
+INFO   | jvm 1    | 2019/06/15 13:13:05 | log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+STATUS | wrapper  | 2019/06/15 13:13:07 | <-- Wrapper Stopped
