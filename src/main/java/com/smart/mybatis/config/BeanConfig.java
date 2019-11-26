@@ -43,7 +43,7 @@ public class BeanConfig {
     public DatabaseManager initDatabaseManager(){
         //自动生成数据库表
         DatabaseManager databaseManager=new DatabaseManager();
-        databaseManager.init(driverUrl, "com.smart.mybatis.model", username, password);
+        databaseManager.init(driverUrl, new String[]{"com.smart.mybatis.model"}, username, password);
         return  databaseManager;
     }
 }
