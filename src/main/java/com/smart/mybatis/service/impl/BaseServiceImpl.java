@@ -15,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.*;
 
 @SuppressWarnings("all")
@@ -171,7 +174,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
-    public PageInfo<T> page(Pageable pageable,T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList) {
+    public PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList) {
         Integer pageNo = pageable.getPageNumber();
         Integer pageSize = pageable.getPageSize();
         pageNo = pageNo == null ? 1 : pageNo;
@@ -191,7 +194,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
-    public Integer count(T entity, Class<T> cls,CountField countField, List<Compare> compareList) {
+    public Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList) {
         Integer num = baseMapper.count(transformObj(entity, TableConstants.LINK, null, null, null, null, compareList,countField,null));
         return num == null ? 0 : num;
     }
@@ -303,7 +306,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     /**
      * 扫描类属性，注入查询值
      */
-    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Query> queryList, List<Compare> compareList,CountField countField,List<UpdateColumn> limitList) {
+    private Map<String, Object> transformObj(Object t, String type, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Query> queryList, List<Compare> compareList, CountField countField, List<UpdateColumn> limitList) {
         //获取表名
         if (null == t.getClass().getAnnotation(Table.class))
             return null;

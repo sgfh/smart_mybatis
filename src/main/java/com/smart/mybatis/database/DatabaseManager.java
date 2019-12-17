@@ -1,9 +1,6 @@
 package com.smart.mybatis.database;
 
-import com.smart.mybatis.annotation.Column;
-import com.smart.mybatis.annotation.GeneratedValue;
-import com.smart.mybatis.annotation.Id;
-import com.smart.mybatis.annotation.Table;
+import com.smart.mybatis.annotation.*;
 import com.smart.mybatis.pojo.TableField;
 import com.smart.mybatis.util.DataSourceUtil;
 import org.slf4j.Logger;
@@ -25,6 +22,10 @@ import java.util.jar.JarFile;
  */
 public class DatabaseManager {
     protected static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
+    private String url;
+    private String username;
+    private String password;
+
     public DatabaseManager() {
 
     }
@@ -35,11 +36,14 @@ public class DatabaseManager {
 
     public void init(String url, String[] packageNames, String username, String password) {
         Date begin = new Date();
-        for (String packageName:packageNames) {
-            logger.info("当前同步包:"+packageName);
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        for (String packageName : packageNames) {
+            logger.info("当前同步包:" + packageName);
             //获取包下所有class类，获取到后，扫描注解，完成数据库表生成
             List<String> classList = getClazzName(packageName, false);
-            logger.info("classList=========="+classList.size());
+            logger.info("classList==========" + classList.size());
             for (String className : classList) {
                 String valueName;
                 StringBuilder stringBuilder = new StringBuilder();
@@ -74,7 +78,6 @@ public class DatabaseManager {
                             if (excuteAddSql.length() != 0) {
                                 excuteAddSql = excuteAddSql.substring(0, excuteAddSql.length() - 1);
                                 excuteAddSql = "ALTER TABLE " + localTableName + excuteAddSql;
-                                logger.info("localTableName========" + localTableName);
                                 executeSql(excuteAddSql, url, username, password);
                             }
                             if (excuteModifySql.length() != 0) {
@@ -93,7 +96,7 @@ public class DatabaseManager {
                             stringBuilder.append(superField.getAnnotation(Id.class).value()).append(" ").append(superField.getAnnotation(Id.class).columnDefinition()).append(" ").append("AUTO_INCREMENT PRIMARY KEY,");
 
                         if (superField.getAnnotation(Column.class) != null)
-                            stringBuilder.append(superField.getAnnotation(Column.class).value()).append(" ").append(superField.getAnnotation(Column.class).columnDefinition()).append(isNull(superField.getAnnotation(Column.class).isNull())).append(",");
+                            stringBuilder.append(superField.getAnnotation(Column.class).value()).append(" ").append(superField.getAnnotation(Column.class).columnDefinition()).append(isNull(superField.getAnnotation(Column.class).isNull())).append(addDesc(superField.getAnnotation(Column.class))).append(",");
 
                         if (superField.getAnnotation(Column.class) != null && superField.getAnnotation(Column.class).index())
                             indexList.add(superField.getAnnotation(Column.class).value());
@@ -102,7 +105,7 @@ public class DatabaseManager {
                     for (Field field : fields) {
                         Column column = field.getAnnotation(Column.class);
                         if (column != null)
-                            stringBuilder.append(column.value()).append(" ").append(column.columnDefinition()).append(isNull(column.isNull())).append(",");
+                            stringBuilder.append(column.value()).append(" ").append(column.columnDefinition()).append(isNull(column.isNull())).append(addDesc(field.getAnnotation(Column.class))).append(",");
                         if (column != null && column.index())
                             indexList.add(column.value());
                     }
@@ -142,6 +145,9 @@ public class DatabaseManager {
         logger.info("====>>init smart table time:" + (end.getTime() - begin.getTime()) + "ms");
     }
 
+
+
+
     /**
      * 添加索引
      */
@@ -166,15 +172,30 @@ public class DatabaseManager {
     private String addFiledSql(Field[] fields, List<TableField> map) {
         StringBuilder stringBuilder = new StringBuilder();
         for (Field field : fields) {
-            if (field.getAnnotation(Column.class) != null) {
+            Column column=field.getAnnotation(Column.class);
+
+            if (column!= null) {
                 String keyColumn = field.getAnnotation(Column.class).value();
-                if (!isSameFieldName(map, keyColumn))
-                    stringBuilder.append(" ADD ").append(keyColumn).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
+                if (!isSameFieldName(map, keyColumn)) {
+                    stringBuilder.append(" ADD ").append(keyColumn).append(" ").append(column.columnDefinition()).append(isNull(column.isNull()))
+                            .append("".equals(column.columnDesc())?"":column.columnDesc()).append(",");
+                }
 
             }
 
         }
         return stringBuilder.toString();
+    }
+
+    /**
+     * 组装注释
+     */
+    private String addDesc(Column column) {
+        String desc=column.columnDesc();
+
+        if ("".equals(column.columnDesc()))
+            return "";
+        return " comment '"+column.columnDesc()+"'";
     }
 
     /**
@@ -186,7 +207,8 @@ public class DatabaseManager {
             if (field.getAnnotation(Column.class) != null) {
                 String keyColumn = field.getAnnotation(Column.class).columnDefinition() + (field.getAnnotation(Column.class).isNull() ? "NULL" : "NOT NULL");
                 if (isSameFieldName(map, field.getAnnotation(Column.class).value()) && !isSameFieldType(map, keyColumn))
-                    stringBuilder.append(" MODIFY ").append(field.getAnnotation(Column.class).value()).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).append(isNull(field.getAnnotation(Column.class).isNull())).append(",");
+                    stringBuilder.append(" MODIFY ").append(field.getAnnotation(Column.class).value()).append(" ").append(field.getAnnotation(Column.class).columnDefinition()).
+                            append(isNull(field.getAnnotation(Column.class).isNull())).append(addDesc(field.getAnnotation(Column.class))).append(",");
             }
 
         }
@@ -326,7 +348,7 @@ public class DatabaseManager {
         List<String> result = new ArrayList<>();
         String suffixPath = packageName.replaceAll("\\.", "/");
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        logger.info("suffixPath====="+suffixPath);
+        logger.info("suffixPath=====" + suffixPath);
         try {
             Enumeration<URL> urls = loader.getResources(suffixPath);
 

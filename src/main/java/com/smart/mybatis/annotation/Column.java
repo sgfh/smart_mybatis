@@ -12,7 +12,10 @@ import java.lang.annotation.*;
 @Documented
 public @interface Column {
     String value();
+    /**字段描述*/
     String columnDefinition();
+    /**字段注释*/
+    String columnDesc() default "";
     boolean unique() default false;
     boolean isNull() default false;
     boolean index() default false;
