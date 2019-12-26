@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -167,7 +168,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 组装属性sql
+     * 组装属性sql--添加columnDesc注解
      */
     private String addFiledSql(Field[] fields, List<TableField> map) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -177,8 +178,9 @@ public class DatabaseManager {
             if (column!= null) {
                 String keyColumn = field.getAnnotation(Column.class).value();
                 if (!isSameFieldName(map, keyColumn)) {
+
                     stringBuilder.append(" ADD ").append(keyColumn).append(" ").append(column.columnDefinition()).append(isNull(column.isNull()))
-                            .append("".equals(column.columnDesc())?"":column.columnDesc()).append(",");
+                            .append(addDesc(field.getAnnotation(Column.class))).append(",");
                 }
 
             }
@@ -191,7 +193,6 @@ public class DatabaseManager {
      * 组装注释
      */
     private String addDesc(Column column) {
-        String desc=column.columnDesc();
 
         if ("".equals(column.columnDesc()))
             return "";
@@ -334,15 +335,12 @@ public class DatabaseManager {
 
 
     /**
-     * 26
-     * 查找包下的所有类的名字
-     * 27
      *
-     * @param packageName          28
+     * 查找包下的所有类的名字
+     * @param packageName
      * @param showChildPackageFlag 是否需要显示子包内容
-     *                             29
      * @return List集合，内容为类的全名
-     * 30
+     *
      */
     private List<String> getClazzName(String packageName, boolean showChildPackageFlag) {
         List<String> result = new ArrayList<>();
