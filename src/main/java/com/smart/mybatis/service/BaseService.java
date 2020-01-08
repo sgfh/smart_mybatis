@@ -21,7 +21,7 @@ public interface BaseService<T> {
 
     int delete(T entity);
 
-    Object findById(Long id, Class<T> cls);
+    T findById(Long id, Class<T> cls);
 
     List<T> list(T entity, Class<T> cls);
 
@@ -35,9 +35,9 @@ public interface BaseService<T> {
 
     List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
 
-    Object find(T entity);
+    T find(T entity);
 
-    Object find(T entity, List<Query> queryList);
+    T find(T entity, List<Query> queryList);
 
     PageInfo<T> page(Pageable pageable, T entity, Class<T> cls);
 

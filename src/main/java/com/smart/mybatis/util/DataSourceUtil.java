@@ -6,8 +6,8 @@ import java.sql.SQLException;
 
 public class DataSourceUtil {
     /**
-     16      * 注册数据库驱动
-     17      */
+           * 注册数据库驱动
+           */
     static {
         try {
             Class.forName("com.mysql.jdbc.Driver");

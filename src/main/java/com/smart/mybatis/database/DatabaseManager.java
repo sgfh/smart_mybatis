@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -239,6 +238,8 @@ public class DatabaseManager {
         }
         return false;
     }
+
+
 
     /**
      * 查询表中否存在

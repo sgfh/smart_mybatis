@@ -90,7 +90,7 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
-    public Object findById(Long id, Class<T> cls) {
+    public T findById(Long id, Class<T> cls) {
         T entity = null;
         try {
             entity = newTClass(cls);
@@ -113,12 +113,12 @@ public class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
-    public Object find(T entity) {
+    public T find(T entity) {
         return linkTMap(entity, baseMapper.find(transformObj(entity, TableConstants.LINK, null, null, null, null, null,null,null)));
     }
 
     @Override
-    public Object find(T entity, List<Query> queryList) {
+    public T find(T entity, List<Query> queryList) {
         return linkTMap(entity, baseMapper.find(transformObj(entity, TableConstants.LINK, null, null, null, queryList, null,null,null)));
     }
 
