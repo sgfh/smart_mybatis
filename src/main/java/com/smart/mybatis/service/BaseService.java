@@ -23,31 +23,31 @@ public interface BaseService<T> {
 
     T findById(Long id, Class<T> cls);
 
-    List<T> list(T entity, Class<T> cls);
+    List<T> list(T entity);
 
-    List<T> list(T entity, Class<T> cls, List<Query> queryList);
+    List<T> list(T entity,  List<Query> queryList);
 
-    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<GroupBy> groupByList);
+    List<T> list(T entity, List<Query> queryList, List<GroupBy> groupByList);
 
-    List<T> list(T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+    List<T> list(T entity,  List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
-    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+    List<T> list(T entity, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
 
-    List<T> list(T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
+    List<T> list(T entity, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
 
     T find(T entity);
 
     T find(T entity, List<Query> queryList);
 
-    PageInfo<T> page(Pageable pageable, T entity, Class<T> cls);
+    PageInfo<T> page(Pageable pageable, T entity);
 
-    PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
-    PageInfo<T> page(Pageable pageable, T entity, Class<T> cls, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
+    PageInfo<T> page(Pageable pageable, T entity, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes);
+    PageInfo<T> page(Pageable pageable, T entity, List<Query> queryList, List<OrderBy> orderList, List<GroupBy> groupByList, List<Like> likes, List<Compare> compareList);
 
-    Integer count(T entity, Class<T> cls, CountField countField);
+    Integer count(T entity, CountField countField);
 
 
-    Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList);
+    Integer count(T entity,  CountField countField, List<Compare> compareList);
 
-    Integer count(T entity, Class<T> cls, CountField countField, List<Compare> compareList, List<Query> queryList);
+    Integer count(T entity, CountField countField, List<Compare> compareList, List<Query> queryList);
 }
